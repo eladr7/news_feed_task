@@ -8,3 +8,13 @@ export interface Item {
   image: string;
   link: ItemLink;
 }
+
+export const emptyFromData: Item = {
+  title: "",
+  text: "",
+  image: "",
+  link: {
+    linkPath: "",
+    linkText: "",
+  },
+};

@@ -1,61 +1,8 @@
 import type { NextPage } from "next";
 import { ChangeEvent, FormEvent, useState } from "react";
-import { Item } from "../../components/definitions";
+import { Item, ItemLink, emptyFromData } from "../../components/definitions";
 import axios from "axios";
-
-interface CustomInputProps {
-  id: string;
-  value: string | undefined;
-  handleInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  fieldError: string | null;
-}
-const CustomInput: React.FC<CustomInputProps> = ({
-  id,
-  value,
-  handleInputChange,
-  fieldError = null,
-}) => {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "1rem",
-        width: "100%",
-      }}
-    >
-      <label
-        htmlFor={id}
-        style={{
-          flexBasis: "15%",
-        }}
-      >
-        Insert {id}
-      </label>
-      <input
-        type="text"
-        name={id}
-        id={id}
-        value={value}
-        onChange={handleInputChange}
-        style={{
-          flexBasis: "20%",
-          marginTop: "0.3rem",
-        }}
-      />
-      {fieldError && (
-        <div
-          style={{
-            flexBasis: "20%",
-            color: "red",
-          }}
-        >
-          {fieldError}
-        </div>
-      )}
-    </div>
-  );
-};
+import CustomInput from "../../components/atoms/CustomInput";
 
 enum FormFields {
   title = "title",
@@ -71,29 +18,28 @@ interface FormErrors {
 interface indexProps {}
 
 export const NewPortal: NextPage<indexProps> = ({}) => {
-  const [formData, setFormData] = useState<Item | null>(null);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [formData, setFormData] = useState<Item>(emptyFromData);
 
   const getFormErrors = () => {
     const newErrors: FormErrors = {};
 
-    if (!formData?.title) {
-      newErrors[FormFields.title] = `Please insert ${FormFields.title} `;
-    }
-
-    if (!formData?.text) {
-      newErrors[FormFields.text] = `Please insert ${FormFields.text} `;
-    }
-    if (!formData?.image) {
-      newErrors[FormFields.image] = `Please insert ${FormFields.image} `;
-    }
-
-    if (!formData?.link.linkText) {
-      newErrors[FormFields.linkText] = `Please insert ${FormFields.linkText} `;
-    }
-    if (!formData?.link.linkPath) {
-      newErrors[FormFields.linkPath] = `Please insert ${FormFields.linkPath} `;
-    }
+    Object.entries(formData!).forEach(([k, v]) => {
+      if (k === "link") {
+        Object.entries(formData!.link).forEach(([k, v]) => {
+          if (!v) {
+            newErrors[FormFields[k as FormFields]] = `Please insert ${
+              FormFields[k as FormFields]
+            } `;
+          }
+        });
+      }
+      if (!v) {
+        newErrors[FormFields[k as FormFields]] = `Please insert ${
+          FormFields[k as FormFields]
+        } `;
+      }
+    });
 
     return newErrors;
   };
@@ -115,7 +61,7 @@ export const NewPortal: NextPage<indexProps> = ({}) => {
       console.error(error);
     }
     setFormErrors({});
-    setFormData(null);
+    setFormData(emptyFromData);
   };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -154,7 +100,6 @@ export const NewPortal: NextPage<indexProps> = ({}) => {
       }}
     >
       <h1>Add news to the feed</h1>
-
       <form
         onSubmit={submitForm}
         style={{
@@ -164,43 +109,20 @@ export const NewPortal: NextPage<indexProps> = ({}) => {
           gap: "1rem",
         }}
       >
-        <CustomInput
-          id={FormFields.title}
-          value={formData?.title}
-          handleInputChange={handleInputChange}
-          fieldError={formErrors[FormFields.title]}
-        />
-        <CustomInput
-          id={FormFields.text}
-          value={formData?.text}
-          handleInputChange={handleInputChange}
-          fieldError={formErrors[FormFields.text]}
-        />
-        <CustomInput
-          id={FormFields.image}
-          value={formData?.image}
-          handleInputChange={handleInputChange}
-          fieldError={formErrors[FormFields.image]}
-        />
-        <CustomInput
-          id={FormFields.linkText}
-          value={formData?.link?.linkText}
-          handleInputChange={handleInputChange}
-          fieldError={formErrors[FormFields.linkText]}
-        />
-        <CustomInput
-          id={FormFields.linkPath}
-          value={formData?.link?.linkPath}
-          handleInputChange={handleInputChange}
-          fieldError={formErrors[FormFields.linkPath]}
-        />
-
-        <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-          }}
-        >
+        {Object.entries(FormFields).map(([k, v]) => (
+          <CustomInput
+            key={k}
+            id={k}
+            value={
+              k !== "link"
+                ? (formData[k as keyof Item] as string)
+                : (formData.link[k as keyof ItemLink] as string)
+            }
+            handleInputChange={handleInputChange}
+            fieldError={formErrors[k]}
+          />
+        ))}
+        <div>
           <input type="submit" value="Add a news item" />
         </div>
       </form>
